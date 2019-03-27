@@ -13,21 +13,7 @@ class DMM6500:
         self.myInstr = 0
     # ======================================================================
     #      DEFINE INSTRUMENT CONNECTION AND COMMUNICATIONS FUNCTIONS HERE
-    # ======================================================================
-    #def Connect(self, myAddress, myPort, timeOut, doReset, doIdQuery):
-    #    self.mySocket.connect((myAddress, myPort)) # input to connect must be a tuple
-    #    self.mySocket.settimeout(timeOut)
-    #    if doReset == 1:
-    #        self.Reset()
-    #        self.SendCmd("waitcomplete()")
-    #    if doIdQuery == 1:
-    #        tmpId = self.IDQuery()
-
-    #    if doIdQuery == 1:
-    #        return tmpId
-    #    else:
-    #        return
-        
+    # ======================================================================     
     def Connect(self, rsrcMgr, rsrcString, timeout, doIdQuery, doReset, doClear):
         self.myInstr = rsrcMgr.open_resource(rsrcString)
         if doIdQuery == 1:
@@ -40,31 +26,15 @@ class DMM6500:
         self.myInstr.timeout = timeout
         return
 
-    #def Disconnect():
-    #    self.myInstr.close()
-    #    return
-    
     def Disconnect(self):
         self.myInstr.close()
         return
-    
-    #def SendCmd(self, cmd):
-    #    if self.echoCmd == 1:
-    #        print(cmd)
-    #    cmd = "{0}\n".format(cmd)
-    #    self.mySocket.send(cmd.encode())
-    #    return
-    
+
     def Write(self, cmd):
         if self.echoCmd == 1:
             print(cmd)
         self.myInstr.write(cmd)
         return
-
-    #def QueryCmd(self, cmd, rcvSize):
-    #    self.SendCmd(cmd)
-    #    time.sleep(0.1)
-    #    return self.mySocket.recv(rcvSize).decode()
 
     def Query(self, cmd):
         if self.echoCmd == 1:
@@ -91,13 +61,13 @@ class DMM6500:
         contents = func_file.read()
         func_file.close()
 
-        cmd = "if loadfuncs ~= nil then script.delete('loadfuncs') end"
+        cmd = "if loadfuncs ~= nil then script.delete('loadfuncs') end\n"
         self.Write(cmd)
 
-        cmd = "loadscript loadfuncs\n{0}\nendscript".format(contents)
+        cmd = "loadscript loadfuncs\n{0}\nendscript\n".format(contents)
         self.Write(cmd)
         
-        print(self.Query("loadfuncs()"))
+        #print(self.Query("loadfuncs()\n"))
         return
 
     # ======================================================================

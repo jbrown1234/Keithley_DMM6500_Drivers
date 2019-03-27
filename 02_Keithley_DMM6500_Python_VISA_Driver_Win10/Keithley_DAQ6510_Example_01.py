@@ -26,7 +26,7 @@ print(myID)
 t1 = time.time()
 
 #DAQ6510.LoadScriptFile(myFile)
-#DAQ6510.SendCmd("do_beep(1.0, 3500)")
+#DAQ6510.Write("do_beep(1.0, 3500)")
 
 DAQ6510.Reset()
 DAQ6510.SetFunction_Temperature("101,110,115,120", DAQ6510.Transducer.TC, DAQ6510.TCType.K)

@@ -11,39 +11,45 @@ class DMM6500:
     def __init__(self):
         self.echoCmd = 1
         self.mySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.stubComms = 0
         
     # ======================================================================
     #      DEFINE INSTRUMENT CONNECTION AND COMMUNICATIONS FUNCTIONS HERE
     # ======================================================================
     def Connect(self, myAddress, myPort, timeOut, doReset, doIdQuery):
-        self.mySocket.connect((myAddress, myPort)) # input to connect must be a tuple
-        self.mySocket.settimeout(timeOut)
+        if (self.stubComms == 0):
+            self.mySocket.connect((myAddress, myPort)) # input to connect must be a tuple
+            self.mySocket.settimeout(timeOut)
         if doReset == 1:
             self.Reset()
             self.SendCmd("waitcomplete()")
         if doIdQuery == 1:
             tmpId = self.IDQuery()
-
         if doIdQuery == 1:
             return tmpId
         else:
             return
 
     def Disconnect(self):
-        self.mySocket.close()
+        if (self.stubComms == 0):
+            self.mySocket.close()
         return
 
     def SendCmd(self, cmd):
         if self.echoCmd == 1:
             print(cmd)
         cmd = "{0}\n".format(cmd)
-        self.mySocket.send(cmd.encode())
+        if (self.stubComms == 0):
+            self.mySocket.send(cmd.encode())
         return
 
     def QueryCmd(self, cmd, rcvSize):
         self.SendCmd(cmd)
         time.sleep(0.1)
-        return self.mySocket.recv(rcvSize).decode()
+        rcvString = ""
+        if (self.stubComms == 0):
+            rcvString = self.mySocket.recv(rcvSize).decode()
+        return rcvString
 
     # ======================================================================
     #      DEFINE BASIC FUNCTIONS HERE
@@ -86,42 +92,112 @@ class DMM6500:
         self.SendCmd(sndBuffer)
         return
 
-    def SetMeasure_Range(self, rng):
-        sndBuffer = "dmm.measure.range = {}".format(rng)
-        self.SendCmd(sndBuffer)
+    def SetMeasure_Range(self, *args):
+        if (type(args[0]) != str):
+            if (type(args[0]) == self.DmmState):
+                if(args[0] == self.AutoRange.OFF):
+                    arState = "dmm.OFF"
+                else:
+                    arState = "dmm.ON"
+                funcStr = "dmm.measure.autorange = {}".format(arState)
+            else:
+                funcStr = "dmm.measure.range = {}".format(args[0])
+            self.SendCmd("{}".format(funcStr))
+        else:
+            setStr = "channel.setdmm(\"{}\", ".format(args[0])
+            if (type(args[1]) == self.AutoRange):
+                if(args[1] == self.AutoRange.OFF):
+                    arState = "dmm.OFF"
+                else:
+                    arState = "dmm.ON"
+                self.SendCmd("{}dmm.ATTR_MEAS_RANGE_AUTO, {})".format(setStr, arState))
+            else:
+                self.SendCmd("{}dmm.ATTR_MEAS_RANGE, {})".format(setStr, args[1]))
         return
 
-    def SetMeasure_NPLC(self, nplc):
-        sndBuffer = "dmm.measure.nplc = {}".format(nplc)
-        self.SendCmd(sndBuffer)
+    def SetMeasure_NPLC(self, *args):
+        if (type(args[0]) != str):
+            self.SendCmd("dmm.measure.nplc = {}".format(args[0]))
+        else:
+            setStr = "channel.setdmm(\"{}\", ".format(args[0])
+            self.SendCmd("{}dmm.ATTR_MEAS_NPLC, {})".format(setStr, args[1]))
         return
 
-    def SetMeasure_InputImpedance(self, myZ):
-        if myZ == self.InputZ.Z_AUTO:
-            funcStr = "dmm.IMPEDANCE_AUTO"
-        elif myZ == self.InputZ.Z_10M:
-            funcStr = "dmm.IMPEDANCE_10M"
-            
-        sndBuffer = "dmm.measure.inputimpedance = {}".format(funcStr)
-        self.SendCmd(sndBuffer)
+    def SeMeasure_LineSync(self, *args):
+        # define me...
+        return
+    
+    def SetMeasure_InputImpedance(self, *args):
+        if (type(args[0]) != str):
+            if myZ == self.InputZ.Z_AUTO:
+                funcStr = "dmm.IMPEDANCE_AUTO"
+            elif myZ == self.InputZ.Z_10M:
+                funcStr = "dmm.IMPEDANCE_10M"
+            self.SendCmd("dmm.measure.inputimpedance = {}".format(funcStr))
+        else:
+            setStr = "channel.setdmm(\"{}\", ".format(args[0])
+            if myZ == self.InputZ.Z_AUTO:
+                funcStr = "dmm.IMPEDANCE_AUTO"
+            elif myZ == self.InputZ.Z_10M:
+                funcStr = "dmm.IMPEDANCE_10M"
+            self.SendCmd("{}dmm.ATTR_MEAS_INPUT_IMPEDANCE, {})".format(setStr, funcStr))
         return
 
-    def SetMeasure_AutoZero(self, myState):
-        if myState == self.DmmState.OFF:
-            funcStr = "dmm.OFF"
-        elif myState == self.DmmState.ON:
-            funcStr = "dmm.ON"
-            
-        sndBuffer = "dmm.measure.autozero.enable = {}".format(funcStr)
-        self.SendCmd(sndBuffer)
+    def SetMeasure_AutoDelay(self, *args):
+        if (type(args[0]) != str):
+            if args[0] == self.DmmState.OFF:
+                funcStr = "dmm.DELAY_OFF"
+            elif args[0] == self.DmmState.ON:
+                funcStr = "dmm.DELAY_ON"
+            self.SendCmd("dmm.measure.autodelay = {}".format(args[0]))
+        else:
+            setStr = "channel.setdmm(\"{}\", ".format(args[0])
+            if args[1] == self.DmmState.OFF:
+                funcStr = "dmm.DELAY_OFF"
+            elif args[1] == self.DmmState.ON:
+                funcStr = "dmm.DELAY_ON"
+            self.SendCmd("{}dmm.ATTR_MEAS_AUTO_DELAY, {})".format(setStr, funcStr))
+        return
+    
+    def SetMeasure_AutoZero(self, *args):
+        if (type(args[0]) != str):
+            if args[0] == self.DmmState.OFF:
+                funcStr = "dmm.OFF"
+            elif args[0] == self.DmmState.ON:
+                funcStr = "dmm.ON"
+            self.SendCmd("dmm.measure.autozero.enable = {}".format(args[0]))
+        else:
+            setStr = "channel.setdmm(\"{}\", ".format(args[0])
+            if args[1] == self.DmmState.OFF:
+                funcStr = "dmm.OFF"
+            elif args[1] == self.DmmState.ON:
+                funcStr = "dmm.ON"
+            self.SendCmd("{}dmm.ATTR_MEAS_AUTO_ZERO, {})".format(setStr, funcStr))
         return
 
+    def SetMeasure_Count(self, *args):
+        if (type(args[0]) != str):
+            self.SendCmd("dmm.measure.count = {}".format(args[0]))
+        else:
+            setStr = "channel.setdmm(\"{}\", ".format(args[0])
+            self.SendCmd("{}dmm.ATTR_MEAS_COUNT, {})".format(setStr, args[1]))
+        return
+
+    def SetMeasure_Filter(self, *args):   # THIS NEEDS FIXED - DOES NOT ACCOUNT FOR CHANNEL USAGE
+        # Default call to this function implies no less than
+        # turning the filter on/off.
+        self.SetMeasure_FilterState(args[0])
+        if(len(args) > 1):
+            self.SetMeasure_FilterType(args[1])
+        if(len(args) > 2):
+            self.SetMeasure_FilterCount(args[2])
+        return
+    
     def SetMeasure_FilterType(self, myFilter):
         if myFilter == self.FilterType.REP:
             funcStr = "dmm.FILTER_REPEAT_AVG"
         elif myFilter == self.FilterType.MOV:
             funcStr = "dmm.FILTER_MOVING_AVG"
-            
         sndBuffer = "dmm.measure.filter.type = {}".format(funcStr)
         self.SendCmd(sndBuffer)
         return
@@ -136,15 +212,119 @@ class DMM6500:
             funcStr = "dmm.OFF"
         elif myState == self.DmmState.ON:
             funcStr = "dmm.ON"
-            
         sndBuffer = "dmm.measure.filter.enable = {}".format(funcStr)
         self.SendCmd(sndBuffer)
+        return
+
+    def SetMeasure_OffsetCompensation(self, *args):
+        if (type(args[0]) != str):
+            xStr = "dmm.measure.offsetcompensation.enable"
+            if(args[0] == self.OCOMP.ON):
+               xStr2 = "dmm.OCOMP_ON"
+            elif(args[0] == self.OCOMP.OFF):
+               xStr2 = "dmm.OCOMP_OFF" 
+            self.SendCmd("{} = {}".format(xStr, xStr2))
+        else:
+            setStr = "channel.setdmm(\"{}\", ".format(args[0])
+            if(args[1] == self.OCOMP.ON):
+               xStr2 = "dmm.OCOMP_ON"
+            elif(args[1] == self.OCOMP.OFF):
+               xStr2 = "dmm.OCOMP_OFF"
+            self.SendCmd("{}dmm.ATTR_MEAS_OFFCOMP_ENABLE, {})".format(setStr, xStr))
         return
     
     def Measure(self, count):
         sndBuffer = "print(dmm.measure.read())"
         return self.QueryCmd(sndBuffer, 32)
 
+    def SetFunction_DC_Voltage(self, *args):
+        # This function can be used to set up different measurement
+        # function attributes, but they are expected to be in a certain
+        # order....
+        #   For simple front/rear terminal measurements:
+        #       1. Input impedance
+        #   For channel scan measurements:
+        #       1. Channel string
+        #       2. Input impedance
+        if (len(args) == 0):
+            self.SendCmd("dmm.measure.func = dmm.FUNC_DC_VOLTAGE")
+        else:
+            if (type(args[0]) != str):
+                self.SendCmd("dmm.measure.func = dmm.FUNC_DC_VOLTAGE")
+                if(len(args) > 0):
+                    xStr = "dmm.measure.inputimpedance"
+                    if(args[0] == self.InputZ.Z_10M):
+                       xStr2 = "dmm.IMPEDANCE_10M"
+                    elif(args[0] == self.InputZ.Z_AUTO):
+                       xStr2 = "dmm.IMPEDANCE_AUTO"
+                    sndBuffer = "{} = {}".format(xStr, xStr2)
+                    self.SendCmd(sndBuffer)
+            else:
+                setStr = "channel.setdmm(\"{}\", ".format(args[0])
+                self.SendCmd("{}dmm.ATTR_MEAS_FUNCTION, dmm.FUNC_DC_VOLTAGE)".format(setStr))
+                if(len(args) > 1):
+                    if(args[1] == self.InputZ.Z_10M):
+                       xStr = "dmm.IMPEDANCE_10M"
+                    elif(args[1] == self.InputZ.Z_AUTO):
+                       xStr = "dmm.IMPEDANCE_AUTO"
+                    
+                    sndBuffer = "{}dmm.ATTR_MEAS_INPUT_IMPEDANCE, {})".format(setStr, xStr)
+                    self.SendCmd(sndBuffer)
+
+    def SetFunction_2W_Resistance(self, *args):
+        if (len(args) == 0):
+            self.SendCmd("dmm.measure.func = dmm.FUNC_RESISTANCE")  #FUNC_4W_RESISTANCE
+        else:
+            if (type(args[0]) != str):
+                self.SendCmd("dmm.measure.func = dmm.FUNC_RESISTANCE")
+            else:
+                setStr = "channel.setdmm(\"{}\", ".format(args[0])
+                self.SendCmd("{}dmm.ATTR_MEAS_FUNCTION, dmm.FUNC_RESISTANCE)".format(setStr))
+        return
+
+    def SetFunction_4W_Resistance(self, *args):
+        if (len(args) == 0):
+            self.SendCmd("dmm.measure.func = dmm.FUNC_4W_RESISTANCE")  
+        else:
+            if (type(args[0]) != str):
+                self.SendCmd("dmm.measure.func = dmm.FUNC_4W_RESISTANCE")
+                if(len(args) > 0):
+                    # The first argument will set OCOMP...
+                    xStr = "dmm.measure.offsetcompensation.enable"
+                    if(args[0] == self.OCOMP.ON):
+                       xStr2 = "dmm.OCOMP_ON"
+                    elif(args[0] == self.OCOMP.OFF):
+                       xStr2 = "dmm.OCOMP_OFF"
+                    sndBuffer = "{} = {}".format(xStr, xStr2)
+                    self.SendCmd(sndBuffer)
+                if(len(args) > 1):
+                    # The second argument will set open lead detection...
+                    xStr = "dmm.measure.opendetector"
+                    if(args[1] == self.DmmState.OFF):
+                       xStr2 = "dmm.OFF"
+                    elif(args[1] == self.DmmState.ON):
+                       xStr2 = "dmm.ON"
+                    sndBuffer = "{} = {}".format(xStr, xStr2)
+                    self.SendCmd(sndBuffer)
+            else:
+                setStr = "channel.setdmm(\"{}\", ".format(args[0])
+                self.SendCmd("{}dmm.ATTR_MEAS_FUNCTION, dmm.FUNC_4W_RESISTANCE)".format(setStr))
+                if(len(args) > 1):
+                    if(args[1] == self.OCOMP.ON):
+                       xStr = "dmm.OCOMP_ON"
+                    elif(args[1] == self.OCOMP.OFF):
+                       xStr = "dmm.OCOMP_OFF"
+                    sndBuffer = "{}dmm.ATTR_MEAS_OFFCOMP_ENABLE, {})".format(setStr, xStr)
+                    self.SendCmd(sndBuffer)
+                if(len(args) > 2):
+                    if(args[2] == self.OLeadDetect.ON):
+                       xStr = "dmm.ON"
+                    elif(args[2] == self.OLeadDetect.OFF):
+                       xStr = "dmm.OFF"
+                    sndBuffer = "{}dmm.ATTR_MEAS_OPEN_DETECTOR, {})".format(setStr, xStr)
+                    self.SendCmd(sndBuffer)
+        return
+    
     def SetFunction_Temperature(self, *args):
         # This function can be used to set up to three different measurement
         # function attributes, but they are expected to be in a certain
@@ -281,6 +461,10 @@ class DMM6500:
     class DmmState(Enum):
         OFF = 0
         ON = 1
+        
+    class AutoRange(Enum):
+        OFF = 0
+        ON = 1
 
     class FilterType(Enum):
         REP = 0
@@ -309,6 +493,14 @@ class DMM6500:
         TH2252 = 0
         TH5K = 1
         TH10K = 2
+
+    class OCOMP(Enum):
+        OFF = 0
+        ON = 1
+
+    class OLeadDetect(Enum):
+        OFF = 0
+        ON = 1
 
     def SetScan_BasicAttributes(self, *args):
         self.SendCmd("scan.create(\"{}\")".format(args[0]))

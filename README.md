@@ -3,6 +3,7 @@ This effort supports series of requests for instrument drivers and/or examples t
 
 ## Requirements
 For Python-based examples, [Python 3.5](https://www.python.org/) or higher is known to work with the Python-based example. 
+* Note
 
 For Visual Studio-based examples, [Microsoft Visual Studio 2017](https://visualstudio.microsoft.com/vs/community/) - the "Community" version is good enough. 
 

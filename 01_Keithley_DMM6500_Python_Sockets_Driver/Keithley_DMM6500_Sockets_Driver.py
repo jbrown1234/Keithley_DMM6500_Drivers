@@ -64,7 +64,7 @@ class DMM6500:
 
     def LoadScriptFile(self, filePathAndName):
         # This function opens the functions.lua file in the same directory as
-        # the Python script and trasfers its contents to the DMM7510's internal
+        # the Python script and trasfers its contents to the DMM's internal
         # memory. All the functions defined in the file are callable by the
         # controlling program. 
         func_file = open(filePathAndName, "r")

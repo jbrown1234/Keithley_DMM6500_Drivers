@@ -22,6 +22,8 @@ class DMM6500:
             self.Write("reset()")
         if doClear == 1:
             self.myInstr.clear()
+        #self.myInstr.read_termination = '\n'
+        #self.myInstr.write_termination = '\n'    
 
         self.myInstr.timeout = timeout
         return
@@ -54,20 +56,20 @@ class DMM6500:
 
     def LoadScriptFile(self, filePathAndName):
         # This function opens the functions.lua file in the same directory as
-        # the Python script and trasfers its contents to the DMM7510's internal
+        # the Python script and trasfers its contents to the DMM's internal
         # memory. All the functions defined in the file are callable by the
         # controlling program. 
         func_file = open(filePathAndName, "r")
         contents = func_file.read()
         func_file.close()
 
-        cmd = "if loadfuncs ~= nil then script.delete('loadfuncs') end\n"
+        cmd = "if loadfuncs ~= nil then script.delete('loadfuncs') end"
         self.Write(cmd)
 
-        cmd = "loadscript loadfuncs\n{0}\nendscript\n".format(contents)
+        cmd = "loadscript loadfuncs\n{0}\nendscript".format(contents)
         self.Write(cmd)
         
-        #print(self.Query("loadfuncs()\n"))
+        print(self.Query("loadfuncs()"))
         return
 
     # ======================================================================

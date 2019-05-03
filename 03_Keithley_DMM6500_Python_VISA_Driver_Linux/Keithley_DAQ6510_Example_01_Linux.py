@@ -38,7 +38,7 @@ endIndex = 4
 chanCnt = 4
 targetCnt = scanCount * 4
 loopCnt = 1
-accumCnt = DAQ6510.QueryCmd("print(defbuffer1.n)")
+accumCnt = DAQ6510.Query("print(defbuffer1.n)")
 while(endIndex < (targetCnt+1)):
     print("Scan {}: {}".format(loopCnt, DAQ6510.GetScan_Data(chanCnt, startIndex, endIndex)))
     startIndex += chanCnt
